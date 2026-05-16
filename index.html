@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>БудТрейд ХХК — Барилгын Тэргүүлэгч</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
+:root{
+  --ink:#050a0f;
+  --ink2:#0c1620;
+  --steel:#111d2a;
+  --gold:#c9a84c;
+  --gold2:#e8c97a;
+  --gold3:#f5e4b0;
+  --white:#f0ece4;
+  --muted:rgba(240,236,228,0.45);
+  --line:rgba(201,168,76,0.2);
+  --fs-hero:clamp(56px,8vw,120px);
+  --fs-h2:clamp(38px,5vw,72px);
+  --fs-h3:clamp(22px,2.5vw,32px);
+  --radius:4px;
+  --transition:0.7s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+
+html{scroll-behavior:smooth;cursor:none;}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--ink);
+  color:var(--white);
+  overflow-x:hidden;
+  line-height:1.7;
+}
+
+/* CUSTOM CURSOR */
+.cursor{
+  position:fixed;width:12px;height:12px;
+  background:var(--gold);border-radius:50%;
+  pointer-events:none;z-index:99999;
+  transform:translate(-50%,-50%);
+  transition:transform 0.1s,width 0.3s,height 0.3s,background 0.3s;
+  mix-blend-mode:difference;
+}
+.cursor-ring{
+  position:fixed;width:44px;height:44px;
+  border:1px solid rgba(201,168,76,0.5);
+  border-radius:50%;pointer-events:none;z-index:99998;
+  transform:translate(-50%,-50%);
+  transition:transform 0.15s ease-out,width 0.3s,height 0.3s,border-color 0.3s;
+}
+.cursor.hover{width:6px;height:6px;}
+.cursor-ring.hover{width:60px;height:60px;border-color:var(--gold);}
+
+/* CANVAS */
+#hero-canvas{
+  position:absolute;top:0;left:0;
+  width:100%;height:100%;
+  z-index:1;opacity:0.85;
+}
+
+/* NOISE OVERLAY */
+body::before{
+  content:'';position:fixed;
+  inset:0;z-index:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity:0.028;
+}
+
+/* NAVBAR */
+.nav{
+  position:fixed;top:0;left:0;width:100%;
+  z-index:900;padding:28px 0;
+  transition:padding 0.5s,background 0.5s;
+}
+.nav.scrolled{
+  padding:16px 0;
+  background:rgba(5,10,15,0.92);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--line);
+}
+.nav-inner{
+  max-width:1400px;margin:auto;padding:0 60px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.logo{
+  display:flex;align-items:center;gap:16px;
+  text-decoration:none;
+}
+.logo-mark{
+  width:42px;height:42px;
+  border:1px solid var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+  transform:rotate(45deg);
+  transition:transform 0.5s;
+}
+.logo-mark:hover{transform:rotate(135deg);}
+.logo-mark span{
+  transform:rotate(-45deg);
+  font-family:'Bebas Neue',sans-serif;
+  font-size:18px;color:var(--gold);
+  letter-spacing:1px;
+}
+.logo-text{
+  font-family:'Cormorant Garamond',serif;
+  font-size:20px;font-weight:600;
+  color:var(--white);letter-spacing:2px;
+  text-transform:uppercase;
+}
+.logo-sub{
+  display:block;font-size:9px;
+  color:var(--gold);letter-spacing:4px;
+  font-family:'DM Sans',sans-serif;
+  font-weight:300;margin-top:-2px;
+}
+.nav-links{
+  display:flex;align-items:center;gap:40px;
+}
+.nav-links a{
+  text-decoration:none;color:var(--muted);
+  font-size:12px;letter-spacing:3px;
+  text-transform:uppercase;font-weight:500;
+  position:relative;transition:color 0.3s;
+}
+.nav-links a::after{
+  content:'';position:absolute;
+  bottom:-4px;left:0;width:0;height:1px;
+  background:var(--gold);transition:width 0.4s;
+}
+.nav-links a:hover{color:var(--gold);}
+.nav-links a:hover::after{width:100%;}
+.nav-cta{
+  padding:12px 28px;
+  border:1px solid var(--gold);
+  color:var(--gold);font-size:11px;
+  letter-spacing:3px;text-transform:uppercase;
+  background:transparent;cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-weight:500;
+  transition:background 0.3s,color 0.3s;
+}
+.nav-cta:hover{background:var(--gold);color:var(--ink);}
+.menu-btn{display:none;color:var(--white);font-size:24px;cursor:pointer;background:none;border:none;}
+
+/* HERO */
+.hero{
+  position:relative;min-height:100vh;
+  display:flex;align-items:center;
+  overflow:hidden;
+  background:radial-gradient(ellipse 80% 60% at 60% 50%, #0d1e30 0%, var(--ink) 70%);
+}
+.hero-bg-lines{
+  position:absolute;inset:0;z-index:0;
+  background-image:
+    linear-gradient(rgba(201,168,76,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201,168,76,0.06) 1px, transparent 1px);
+  background-size:80px 80px;
+  mask-image:radial-gradient(ellipse 60% 80% at 50% 50%, black, transparent);
+}
+.hero-content{
+  position:relative;z-index:10;
+  max-width:1400px;margin:auto;padding:0 60px;
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:80px;align-items:center;
+  padding-top:100px;
+}
+.hero-eyebrow{
+  display:flex;align-items:center;gap:16px;
+  margin-bottom:28px;
+}
+.hero-eyebrow::before{
+  content:'';width:50px;height:1px;background:var(--gold);
+}
+.hero-eyebrow span{
+  font-size:11px;letter-spacing:4px;
+  color:var(--gold);text-transform:uppercase;
+  font-weight:500;
+}
+.hero h1{
+  font-family:'Cormorant Garamond',serif;
+  font-size:var(--fs-hero);
+  line-height:0.95;font-weight:300;
+  color:var(--white);margin-bottom:32px;
+  letter-spacing:-1px;
+}
+.hero h1 em{
+  font-style:italic;color:var(--gold);
+  display:block;
+}
+.hero-desc{
+  font-size:15px;color:var(--muted);
+  max-width:480px;margin-bottom:50px;
+  font-weight:300;line-height:1.9;
+  letter-spacing:0.3px;
+}
+.hero-btns{display:flex;gap:20px;flex-wrap:wrap;}
+.btn-gold{
+  padding:18px 40px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:var(--ink);font-size:11px;
+  letter-spacing:3px;text-transform:uppercase;
+  font-weight:600;border:none;cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+  clip-path:polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  transition:transform 0.3s,box-shadow 0.3s;
+}
+.btn-gold:hover{
+  transform:translateY(-4px);
+  box-shadow:0 20px 50px rgba(201,168,76,0.3);
+}
+.btn-outline{
+  padding:18px 40px;
+  background:transparent;
+  color:var(--white);font-size:11px;
+  letter-spacing:3px;text-transform:uppercase;
+  font-weight:500;
+  border:1px solid rgba(240,236,228,0.25);
+  cursor:pointer;font-family:'DM Sans',sans-serif;
+  transition:border-color 0.3s,color 0.3s;
+}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold);}
+
+/* HERO STATS */
+.hero-right{position:relative;}
+.stats-3d-container{
+  position:relative;height:520px;
+  display:flex;align-items:center;justify-content:center;
+}
+#stats-canvas{width:100%;height:100%;border-radius:8px;}
+.stat-cards{
+  position:absolute;bottom:-20px;left:-20px;right:-20px;
+  display:grid;grid-template-columns:repeat(2,1fr);gap:2px;
+}
+.stat-card{
+  background:rgba(12,22,32,0.85);
+  backdrop-filter:blur(20px);
+  border:1px solid var(--line);
+  padding:24px 28px;
+  position:relative;overflow:hidden;
+  transition:border-color 0.3s,transform 0.3s;
+}
+.stat-card::before{
+  content:'';position:absolute;
+  top:0;left:0;width:100%;height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  transform:translateX(-100%);
+  transition:transform 0.6s;
+}
+.stat-card:hover::before{transform:translateX(100%);}
+.stat-card:hover{border-color:var(--gold);transform:translateY(-4px);}
+.stat-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:52px;line-height:1;
+  background:linear-gradient(135deg,var(--gold),var(--gold3));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:6px;
+}
+.stat-label{
+  font-size:10px;letter-spacing:3px;
+  color:var(--muted);text-transform:uppercase;font-weight:500;
+}
+
+/* SECTIONS */
+.section{padding:140px 0;}
+.section-alt{background:var(--ink2);}
+.container{max-width:1400px;margin:auto;padding:0 60px;}
+
+.section-tag{
+  display:inline-flex;align-items:center;gap:14px;
+  margin-bottom:24px;
+}
+.section-tag::before{content:'';width:30px;height:1px;background:var(--gold);}
+.section-tag span{
+  font-size:10px;letter-spacing:5px;
+  color:var(--gold);text-transform:uppercase;font-weight:600;
+}
+.section-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:var(--fs-h2);font-weight:300;
+  line-height:1.05;margin-bottom:20px;
+  letter-spacing:-0.5px;
+}
+.section-title em{font-style:italic;color:var(--gold);}
+.section-sub{
+  color:var(--muted);font-size:15px;
+  max-width:540px;font-weight:300;line-height:1.9;
+}
+
+/* SERVICES */
+.services-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:2px;margin-top:70px;
+}
+.service-card{
+  background:var(--steel);
+  padding:50px 40px;position:relative;
+  overflow:hidden;cursor:pointer;
+  transition:background 0.4s;
+  border:1px solid transparent;
+}
+.service-card::after{
+  content:'';position:absolute;
+  inset:0;
+  background:linear-gradient(135deg,rgba(201,168,76,0.05),transparent);
+  opacity:0;transition:opacity 0.4s;
+}
+.service-card:hover{background:var(--ink2);border-color:var(--line);}
+.service-card:hover::after{opacity:1;}
+.service-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:80px;line-height:0.8;
+  color:rgba(201,168,76,0.08);
+  position:absolute;top:30px;right:30px;
+  transition:color 0.4s;
+}
+.service-card:hover .service-num{color:rgba(201,168,76,0.15);}
+.service-icon{
+  width:60px;height:60px;
+  border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:30px;
+  transition:border-color 0.3s,transform 0.3s;
+}
+.service-card:hover .service-icon{border-color:var(--gold);transform:rotate(5deg);}
+.service-icon svg{width:28px;height:28px;stroke:var(--gold);fill:none;stroke-width:1.5;}
+.service-card h3{
+  font-family:'Cormorant Garamond',serif;
+  font-size:28px;font-weight:500;
+  margin-bottom:16px;color:var(--white);
+  letter-spacing:0.5px;
+}
+.service-card p{color:var(--muted);font-size:14px;font-weight:300;line-height:1.8;}
+.service-arrow{
+  display:inline-flex;align-items:center;gap:10px;
+  margin-top:28px;font-size:11px;
+  letter-spacing:3px;color:var(--gold);
+  text-transform:uppercase;font-weight:500;
+  transition:gap 0.3s;
+}
+.service-card:hover .service-arrow{gap:16px;}
+
+/* 3D BUILDING SHOWCASE */
+.showcase{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:0;align-items:stretch;
+  margin-top:80px;
+}
+.showcase-canvas-wrap{
+  position:relative;height:600px;overflow:hidden;
+  background:var(--steel);
+}
+#building-canvas{width:100%;height:100%;}
+.showcase-info{
+  background:var(--ink2);
+  border:1px solid var(--line);
+  padding:70px 60px;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.showcase-info .section-tag{margin-bottom:20px;}
+.showcase-info .section-title{font-size:clamp(32px,4vw,54px);}
+.features-list{margin-top:50px;display:flex;flex-direction:column;gap:0;}
+.feature-item{
+  display:flex;gap:24px;
+  padding:24px 0;
+  border-bottom:1px solid var(--line);
+  align-items:flex-start;
+  transition:transform 0.3s;
+}
+.feature-item:hover{transform:translateX(8px);}
+.feature-item:first-child{border-top:1px solid var(--line);}
+.feature-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:13px;letter-spacing:2px;
+  color:var(--gold);min-width:32px;
+  margin-top:3px;
+}
+.feature-item h4{
+  font-size:15px;font-weight:500;
+  margin-bottom:6px;color:var(--white);
+  letter-spacing:0.3px;
+}
+.feature-item p{font-size:13px;color:var(--muted);font-weight:300;line-height:1.7;}
+
+/* PROJECTS */
+.projects-header{
+  display:flex;justify-content:space-between;
+  align-items:flex-end;margin-bottom:60px;
+}
+.projects-grid{
+  display:grid;
+  grid-template-columns:1.4fr 1fr;
+  grid-template-rows:auto auto;
+  gap:3px;
+}
+.project-card{
+  position:relative;overflow:hidden;
+  cursor:pointer;
+}
+.project-card.large{grid-row:span 2;}
+.project-img{
+  width:100%;height:100%;
+  object-fit:cover;
+  transition:transform 0.8s var(--transition);
+  display:block;
+  min-height:300px;
+}
+.project-card.large .project-img{min-height:600px;}
+.project-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to top, rgba(5,10,15,0.95) 0%, rgba(5,10,15,0.3) 50%, transparent 100%);
+  display:flex;flex-direction:column;justify-content:flex-end;
+  padding:40px;
+  transition:background 0.4s;
+}
+.project-card:hover .project-img{transform:scale(1.08);}
+.project-tag{
+  font-size:9px;letter-spacing:4px;
+  color:var(--gold);text-transform:uppercase;
+  font-weight:600;margin-bottom:12px;
+}
+.project-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:28px;font-weight:400;
+  color:var(--white);margin-bottom:8px;
+}
+.project-card.large .project-name{font-size:40px;}
+.project-desc{font-size:13px;color:rgba(240,236,228,0.65);font-weight:300;}
+.project-link{
+  position:absolute;top:30px;right:30px;
+  width:44px;height:44px;
+  border:1px solid rgba(201,168,76,0.4);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transform:translateY(-10px);
+  transition:opacity 0.3s,transform 0.3s,background 0.3s;
+}
+.project-card:hover .project-link{opacity:1;transform:translateY(0);}
+.project-link:hover{background:var(--gold);}
+.project-link svg{width:18px;height:18px;stroke:var(--gold);fill:none;stroke-width:2;}
+.project-link:hover svg{stroke:var(--ink);}
+
+/* ABOUT */
+.about-layout{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:100px;align-items:center;
+}
+.about-visual{
+  position:relative;height:600px;
+}
+#about-canvas{width:100%;height:100%;}
+.about-badge{
+  position:absolute;bottom:40px;right:-20px;
+  background:var(--gold);
+  padding:28px 32px;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%);
+}
+.about-badge-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:52px;line-height:1;color:var(--ink);
+}
+.about-badge-text{
+  font-size:10px;letter-spacing:3px;
+  color:rgba(5,10,15,0.7);text-transform:uppercase;
+  font-weight:600;
+}
+.about-text .section-title{margin-bottom:28px;}
+.about-text p{
+  color:var(--muted);font-size:15px;
+  font-weight:300;line-height:1.9;margin-bottom:20px;
+}
+.milestones{margin-top:50px;}
+.milestone{
+  display:grid;grid-template-columns:80px 1fr;
+  gap:24px;padding:20px 0;
+  border-bottom:1px solid var(--line);
+  align-items:start;
+}
+.milestone-year{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:22px;color:var(--gold);letter-spacing:2px;
+}
+.milestone-text{font-size:13px;color:var(--muted);font-weight:300;line-height:1.7;}
+
+/* TESTIMONIALS */
+.testimonials-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:2px;margin-top:70px;
+}
+.testimonial-card{
+  background:var(--steel);padding:44px 36px;
+  position:relative;overflow:hidden;
+  border:1px solid transparent;
+  transition:border-color 0.3s,transform 0.4s;
+}
+.testimonial-card:hover{border-color:var(--line);transform:translateY(-8px);}
+.quote-mark{
+  font-family:'Cormorant Garamond',serif;
+  font-size:120px;line-height:0.7;
+  color:rgba(201,168,76,0.1);
+  position:absolute;top:20px;left:20px;
+}
+.stars{
+  display:flex;gap:4px;margin-bottom:24px;
+}
+.star{width:14px;height:14px;fill:var(--gold);}
+.testimonial-text{
+  font-family:'Cormorant Garamond',serif;
+  font-size:17px;font-style:italic;
+  color:var(--white);line-height:1.7;
+  margin-bottom:30px;font-weight:400;
+}
+.testimonial-author{
+  display:flex;align-items:center;gap:16px;
+  padding-top:24px;border-top:1px solid var(--line);
+}
+.author-avatar{
+  width:44px;height:44px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;color:var(--ink);
+  font-family:'DM Sans',sans-serif;
+  clip-path:polygon(10% 0,90% 0,100% 10%,100% 90%,90% 100%,10% 100%,0 90%,0 10%);
+}
+.author-name{font-size:14px;font-weight:600;color:var(--white);}
+.author-role{font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;}
+
+/* CONTACT */
+.contact-layout{
+  display:grid;grid-template-columns:0.9fr 1.1fr;
+  gap:3px;margin-top:70px;
+}
+.contact-left{
+  background:linear-gradient(145deg,var(--steel),var(--ink2));
+  padding:60px 50px;
+  border:1px solid var(--line);
+  position:relative;overflow:hidden;
+}
+.contact-left::before{
+  content:'';position:absolute;
+  top:-100px;right:-100px;
+  width:300px;height:300px;
+  background:radial-gradient(circle,rgba(201,168,76,0.08),transparent 70%);
+}
+.contact-left h3{
+  font-family:'Cormorant Garamond',serif;
+  font-size:40px;font-weight:400;
+  margin-bottom:16px;color:var(--white);
+}
+.contact-left p{color:var(--muted);font-size:14px;font-weight:300;margin-bottom:50px;}
+.contact-item{
+  display:flex;gap:20px;align-items:flex-start;
+  margin-bottom:30px;
+}
+.c-icon{
+  width:48px;height:48px;min-width:48px;
+  border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+}
+.c-icon svg{width:20px;height:20px;stroke:var(--gold);fill:none;stroke-width:1.5;}
+.c-label{font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:4px;}
+.c-value{font-size:14px;color:var(--white);}
+.contact-form{background:var(--ink2);padding:60px 50px;border:1px solid var(--line);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.form-group{margin-bottom:20px;}
+.form-group label{
+  display:block;font-size:10px;
+  letter-spacing:3px;color:var(--gold);
+  text-transform:uppercase;margin-bottom:12px;font-weight:500;
+}
+.form-group input,
+.form-group textarea,
+.form-group select{
+  width:100%;padding:16px 20px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(201,168,76,0.15);
+  color:var(--white);font-size:14px;
+  font-family:'DM Sans',sans-serif;font-weight:300;
+  outline:none;transition:border-color 0.3s,background 0.3s;
+  border-radius:0;
+}
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus{
+  border-color:var(--gold);background:rgba(201,168,76,0.04);
+}
+.form-group textarea{height:130px;resize:none;}
+.form-group select option{background:var(--ink2);color:var(--white);}
+.submit-btn{
+  width:100%;padding:18px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:var(--ink);border:none;
+  font-size:11px;letter-spacing:4px;
+  text-transform:uppercase;font-weight:700;
+  font-family:'DM Sans',sans-serif;cursor:pointer;
+  clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
+  transition:transform 0.3s,box-shadow 0.3s;
+}
+.submit-btn:hover{
+  transform:translateY(-3px);
+  box-shadow:0 20px 40px rgba(201,168,76,0.3);
+}
+
+/* FOOTER */
+.footer{
+  background:var(--ink);
+  border-top:1px solid var(--line);
+  padding:80px 0 40px;
+}
+.footer-grid{
+  display:grid;grid-template-columns:2fr 1fr 1fr;
+  gap:60px;margin-bottom:60px;
+}
+.footer-brand p{
+  color:var(--muted);font-size:14px;
+  font-weight:300;line-height:1.9;
+  max-width:300px;margin-top:24px;
+}
+.footer h4{
+  font-size:10px;letter-spacing:4px;
+  color:var(--gold);text-transform:uppercase;
+  margin-bottom:24px;font-weight:600;
+}
+.footer a,
+.footer p{
+  color:var(--muted);text-decoration:none;
+  font-size:14px;font-weight:300;
+  display:block;margin-bottom:12px;
+  transition:color 0.3s;
+}
+.footer a:hover{color:var(--white);}
+.footer-bottom{
+  padding-top:30px;
+  border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;
+  align-items:center;
+}
+.footer-bottom p{
+  font-size:12px;color:rgba(240,236,228,0.3);
+  letter-spacing:1px;margin:0;
+}
+
+/* SCROLL INDICATOR */
+.scroll-indicator{
+  position:absolute;bottom:40px;left:60px;
+  z-index:10;display:flex;align-items:center;gap:16px;
+}
+.scroll-line{
+  width:60px;height:1px;background:var(--gold);
+  position:relative;overflow:hidden;
+}
+.scroll-line::after{
+  content:'';position:absolute;
+  top:0;left:-100%;width:100%;height:100%;
+  background:var(--white);
+  animation:scrollLine 2s ease-in-out infinite;
+}
+@keyframes scrollLine{
+  0%{left:-100%}100%{left:100%}
+}
+.scroll-text{
+  font-size:10px;letter-spacing:4px;
+  color:var(--muted);text-transform:uppercase;
+}
+
+/* SCROLL TOP */
+.scroll-top-btn{
+  position:fixed;right:40px;bottom:40px;
+  width:52px;height:52px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:800;
+  clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px);
+  opacity:0;transform:translateY(20px);
+  transition:opacity 0.3s,transform 0.3s;
+  border:none;
+}
+.scroll-top-btn.visible{opacity:1;transform:translateY(0);}
+.scroll-top-btn svg{width:20px;height:20px;stroke:var(--ink);fill:none;stroke-width:2;}
+
+/* REVEAL ANIMATIONS */
+.reveal{
+  opacity:0;transform:translateY(50px);
+  transition:opacity 0.9s ease,transform 0.9s ease;
+}
+.reveal.active{opacity:1;transform:translateY(0);}
+.reveal-left{
+  opacity:0;transform:translateX(-60px);
+  transition:opacity 0.9s ease,transform 0.9s ease;
+}
+.reveal-left.active{opacity:1;transform:translateX(0);}
+
+/* MOBILE NAV */
+@media(max-width:1100px){
+  .nav-inner{padding:0 30px;}
+  .nav-links{display:none;}
+  .menu-btn{display:block;}
+  .nav-links.mobile-open{
+    display:flex;flex-direction:column;
+    position:fixed;top:0;left:0;right:0;bottom:0;
+    background:var(--ink);z-index:800;
+    justify-content:center;align-items:center;
+    gap:40px;
+  }
+  .nav-links.mobile-open a{font-size:28px;letter-spacing:4px;}
+  .hero-content{grid-template-columns:1fr;padding:0 30px;padding-top:120px;}
+  .hero-right{display:none;}
+  .scroll-indicator{left:30px;}
+  .services-grid,.testimonials-grid{grid-template-columns:1fr;}
+  .showcase,.about-layout,.contact-layout,.footer-grid{grid-template-columns:1fr;}
+  .projects-grid{grid-template-columns:1fr;}
+  .project-card.large{grid-row:auto;}
+  .container{padding:0 30px;}
+  .section{padding:90px 0;}
+  .projects-header{flex-direction:column;align-items:flex-start;gap:20px;}
+  .about-visual{height:400px;}
+  .contact-left,.contact-form{padding:40px 30px;}
+  .form-row{grid-template-columns:1fr;}
+  .footer-grid{grid-template-columns:1fr;}
+}
+@media(max-width:600px){
+  .hero h1{letter-spacing:-2px;}
+  .stat-cards{grid-template-columns:1fr 1fr;}
+  .stat-num{font-size:36px;}
+}
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAVBAR -->
+<nav class="nav" id="navbar">
+  <div class="nav-inner">
+    <a href="#home" class="logo">
+      <div class="logo-mark"><span>БТ</span></div>
+      <div>
+        <div class="logo-text">БудТрейд</div>
+        <span class="logo-sub">ХХК · SINCE 2009</span>
+      </div>
+    </a>
+    <button class="menu-btn" id="menuBtn">☰</button>
+    <div class="nav-links" id="navLinks">
+      <a href="#home">Нүүр</a>
+      <a href="#services">Үйлчилгээ</a>
+      <a href="#projects">Төслүүд</a>
+      <a href="#about">Бидний тухай</a>
+      <a href="#contact">Холбоо</a>
+    </div>
+    <button class="nav-cta">Үнийн санал авах</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-bg-lines"></div>
+  <canvas id="hero-canvas"></canvas>
+
+  <div class="hero-content">
+    <div>
+      <div class="hero-eyebrow">
+        <span>Монголын Тэргүүлэгч Барилгын Компани</span>
+      </div>
+      <h1>
+        Ирээдүйн
+        <em>барилгыг</em>
+        өнөөдөр бүтээнэ
+      </h1>
+      <p class="hero-desc">
+        Орон сууц, оффис, үйлдвэр болон худалдааны барилгын цогц шийдлийг олон улсын стандартаар мэргэжлийн түвшинд гүйцэтгэнэ.
+      </p>
+      <div class="hero-btns">
+        <button class="btn-gold" onclick="document.getElementById('projects').scrollIntoView({behavior:'smooth'})">Төслүүд үзэх</button>
+        <button class="btn-outline" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Зөвлөгөө авах</button>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="stats-3d-container">
+        <canvas id="stats-canvas"></canvas>
+      </div>
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="stat-num">250+</div>
+          <div class="stat-label">Амжилттай төсөл</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">15+</div>
+          <div class="stat-label">Жилийн туршлага</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">98%</div>
+          <div class="stat-label">Цагтаа хүлээлгэн өгсөн</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">100+</div>
+          <div class="stat-label">Мэргэжлийн ажилтан</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-indicator">
+    <div class="scroll-line"></div>
+    <span class="scroll-text">Доош гүйлгэх</span>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section class="section section-alt" id="services">
+  <div class="container">
+    <div class="section-tag reveal"><span>Үйлчилгээ</span></div>
+    <h2 class="section-title reveal">Бидний <em>үйлчилгээнүүд</em></h2>
+    <p class="section-sub reveal">Барилгын салбарын бүх чиглэлээр мэргэжлийн цогц шийдэл</p>
+
+    <div class="services-grid">
+      <div class="service-card reveal">
+        <div class="service-num">01</div>
+        <div class="service-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <h3>Орон сууц</h3>
+        <p>Орон сууц, хаус, хотхон төлөвлөлт болон иж бүрэн барилгын ажлыг цогцоор гүйцэтгэнэ.</p>
+        <div class="service-arrow">Дэлгэрэнгүй <span>→</span></div>
+      </div>
+      <div class="service-card reveal">
+        <div class="service-num">02</div>
+        <div class="service-icon">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        </div>
+        <h3>Арилжааны барилга</h3>
+        <p>Оффис, үйлчилгээний төв, худалдааны барилгын цогц шийдлийг мэргэжлийн түвшинд хэрэгжүүлнэ.</p>
+        <div class="service-arrow">Дэлгэрэнгүй <span>→</span></div>
+      </div>
+      <div class="service-card reveal">
+        <div class="service-num">03</div>
+        <div class="service-icon">
+          <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        </div>
+        <h3>Засвар үйлчилгээ</h3>
+        <p>Дотор болон гадна засварын мэргэжлийн үйлчилгээ, интерьер дизайны цогц шийдэл.</p>
+        <div class="service-arrow">Дэлгэрэнгүй <span>→</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3D SHOWCASE -->
+<section class="section">
+  <div class="container">
+    <div class="showcase">
+      <div class="showcase-canvas-wrap reveal-left">
+        <canvas id="building-canvas"></canvas>
+      </div>
+      <div class="showcase-info reveal">
+        <div class="section-tag"><span>Давуу тал</span></div>
+        <h2 class="section-title">Яагаад биднийг <em>сонгох вэ?</em></h2>
+        <div class="features-list">
+          <div class="feature-item">
+            <div class="feature-num">01</div>
+            <div>
+              <h4>Олон улсын стандарт</h4>
+              <p>ISO болон БНМАУ-ын барилгын норм нормативын дагуу өндөр чанарын баталгаа.</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-num">02</div>
+            <div>
+              <h4>Хугацаандаа хүлээлгэн өгнө</h4>
+              <p>Төслийн менежментийн дэвшилтэт системийг ашиглан гэрээт хугацаандаа дуусгана.</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-num">03</div>
+            <div>
+              <h4>Мэргэжлийн инженерийн баг</h4>
+              <p>15+ жилийн туршлагатай архитектор, инженер, усадааны мэргэжилтнүүд.</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-num">04</div>
+            <div>
+              <h4>Оновчтой үнэ ба чанар</h4>
+              <p>Таны төсөвт тохирсон шийдлийг санал болгон хамгийн дээд чанараар биелүүлнэ.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section class="section section-alt" id="projects">
+  <div class="container">
+    <div class="projects-header">
+      <div>
+        <div class="section-tag reveal"><span>Төслүүд</span></div>
+        <h2 class="section-title reveal">Сүүлийн <em>бүтээлүүд</em></h2>
+      </div>
+      <button class="btn-outline reveal">Бүх төслүүд →</button>
+    </div>
+    <div class="projects-grid">
+      <div class="project-card large reveal">
+        <img class="project-img" src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1200&auto=format&fit=crop" alt="Туул Тауэр">
+        <div class="project-overlay">
+          <div class="project-tag">Оффисын барилга · 2024</div>
+          <div class="project-name">Туул Тауэр</div>
+          <div class="project-desc">16 давхар оффисын цогцолбор, 12,000 м²</div>
+        </div>
+        <div class="project-link">
+          <svg viewBox="0 0 24 24"><path d="M7 17L17 7M7 7h10v10"/></svg>
+        </div>
+      </div>
+      <div class="project-card reveal">
+        <img class="project-img" src="https://images.unsplash.com/photo-1460317442991-0ec209397118?q=80&w=1200&auto=format&fit=crop" alt="Ногоон Хороолол">
+        <div class="project-overlay">
+          <div class="project-tag">Орон сууц · 2023</div>
+          <div class="project-name">Ногоон Хороолол</div>
+          <div class="project-desc">80 айлын орчин үеийн орон сууц</div>
+        </div>
+        <div class="project-link">
+          <svg viewBox="0 0 24 24"><path d="M7 17L17 7M7 7h10v10"/></svg>
+        </div>
+      </div>
+      <div class="project-card reveal">
+        <img class="project-img" src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=1200&auto=format&fit=crop" alt="Дархан Үйлдвэр">
+        <div class="project-overlay">
+          <div class="project-tag">Үйлдвэрийн барилга · 2023</div>
+          <div class="project-name">Дархан Үйлдвэр</div>
+          <div class="project-desc">Аж үйлдвэрийн цогцолбор, 35,000 м²</div>
+        </div>
+        <div class="project-link">
+          <svg viewBox="0 0 24 24"><path d="M7 17L17 7M7 7h10v10"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="section" id="about">
+  <div class="container">
+    <div class="about-layout">
+      <div class="about-visual reveal-left">
+        <canvas id="about-canvas"></canvas>
+        <div class="about-badge">
+          <div class="about-badge-num">15+</div>
+          <div class="about-badge-text">Жилийн туршлага</div>
+        </div>
+      </div>
+      <div class="about-text reveal">
+        <div class="section-tag"><span>Бидний тухай</span></div>
+        <h2 class="section-title">Монголын барилгын <em>салбарын тэргүүн</em></h2>
+        <p>БудТрейд ХХК нь 2009 оноос хойш Монголын барилгын салбарт тогтвортой хөгжиж ирсэн, хамгийн найдвартай компаниудын нэг юм.</p>
+        <p>Бид зөвхөн барилга барихаас гадна таны мөрөөдлийг бодит болгоход туслана. Архитектурын дизайнаас эхлээд барилга ашиглалтад оруулах хүртэлх бүхий л үе шатыг нэг дороос шийднэ.</p>
+        <div class="milestones">
+          <div class="milestone">
+            <div class="milestone-year">2009</div>
+            <div class="milestone-text">Улаанбаатар хотод үйл ажиллагаа эхлүүлсэн. Анхны 10 орон сууцны барилга.</div>
+          </div>
+          <div class="milestone">
+            <div class="milestone-year">2014</div>
+            <div class="milestone-text">Арилжааны барилгын чиглэлийг нэмж, 21 аймагт салбар нээсэн.</div>
+          </div>
+          <div class="milestone">
+            <div class="milestone-year">2019</div>
+            <div class="milestone-text">ISO 9001:2015 сертификат авч, 100+ мэргэжилтний баг бүрдүүлсэн.</div>
+          </div>
+          <div class="milestone">
+            <div class="milestone-year">2024</div>
+            <div class="milestone-text">250 дахь амжилттай төслийг хүлээлгэн өгч, салбарын тэргүүлэгч болсон.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-tag reveal"><span>Сэтгэгдэл</span></div>
+    <h2 class="section-title reveal">Хэрэглэгчдийн <em>үнэлгээ</em></h2>
+    <div class="testimonials-grid">
+      <div class="testimonial-card reveal">
+        <div class="quote-mark">"</div>
+        <div class="stars">
+          <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <p class="testimonial-text">"Маш хурдан бөгөөд өндөр чанартай үйлчилгээ. Хугацаанаас хоёр долоо хоног эрт дуусгасан нь гайхалтай байлаа."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">БО</div>
+          <div>
+            <div class="author-name">Б. Очирбат</div>
+            <div class="author-role">Компанийн захирал</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card reveal">
+        <div class="quote-mark">"</div>
+        <div class="stars">
+          <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <p class="testimonial-text">"Мэргэжлийн инженерийн баг маш сайн ажилласан. Гүйцэтгэлийн чанар болон харилцааны соёл онцгой байлаа."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">ДМ</div>
+          <div>
+            <div class="author-name">Д. Мөнхзул</div>
+            <div class="author-role">Хувийн хэрэглэгч</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card reveal">
+        <div class="quote-mark">"</div>
+        <div class="stars">
+          <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <p class="testimonial-text">"Үнэ боломжийн мөртлөө чанар маш өндөр. Гэрээний нөхцөл ил тод, итгэлтэй хамтрагч болсон."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">ГЭ</div>
+          <div>
+            <div class="author-name">Г. Энхбат</div>
+            <div class="author-role">Бизнес эрхлэгч</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="section" id="contact">
+  <div class="container">
+    <div class="section-tag reveal"><span>Холбоо барих</span></div>
+    <h2 class="section-title reveal">Бидэнтэй <em>холбогдоорой</em></h2>
+    <div class="contact-layout">
+      <div class="contact-left reveal-left">
+        <h3>Танд туслахад бэлэн</h3>
+        <p>Барилгын аливаа асуудлаар мэргэжлийн зөвлөгөө, дэлгэрэнгүй мэдээлэл авахыг хүсвэл холбогдоорой.</p>
+        <div class="contact-item">
+          <div class="c-icon">
+            <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.69 11.5a19.79 19.79 0 01-3.07-8.67A2 2 0 013.6 1h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+          </div>
+          <div>
+            <div class="c-label">Утас</div>
+            <div class="c-value">+976 9911-2233</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="c-icon">
+            <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div>
+            <div class="c-label">И-мэйл</div>
+            <div class="c-value">info@budtrade.mn</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="c-icon">
+            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div>
+            <div class="c-label">Хаяг</div>
+            <div class="c-value">Улаанбаатар хот, Чингэлтэй дүүрэг, Самбуугийн гудамж 24, M плаза, 16 давхарт</div>
+          </div>
+        </div>
+      </div>
+      <div class="contact-form reveal">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Нэр</label>
+            <input type="text" placeholder="Таны нэр">
+          </div>
+          <div class="form-group">
+            <label>Утасны дугаар</label>
+            <input type="text" placeholder="99112233">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>И-мэйл хаяг</label>
+          <input type="email" placeholder="example@mail.com">
+        </div>
+        <div class="form-group">
+          <label>Үйлчилгээний төрөл</label>
+          <select>
+            <option>Үйлчилгээ сонгоно уу</option>
+            <option>Орон сууц барих</option>
+            <option>Арилжааны барилга</option>
+            <option>Засвар үйлчилгээ</option>
+            <option>Зөвлөгөө авах</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Мессеж</label>
+          <textarea placeholder="Таны хүсэлт, асуулт..."></textarea>
+        </div>
+        <button class="submit-btn">Хүсэлт илгээх</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo">
+          <div class="logo-mark"><span>БТ</span></div>
+          <div>
+            <div class="logo-text">БудТрейд</div>
+            <span class="logo-sub">ХХК · SINCE 2009</span>
+          </div>
+        </div>
+        <p>Монголын барилгын салбарт чанар, найдвартай байдлыг эрхэмлэн ажилладаг тэргүүлэгч компани. 15 жилийн туршлага, 250+ амжилттай төсөл.</p>
+      </div>
+      <div>
+        <h4>Цэс</h4>
+        <a href="#home">Нүүр хуудас</a>
+        <a href="#services">Үйлчилгээ</a>
+        <a href="#projects">Төслүүд</a>
+        <a href="#about">Бидний тухай</a>
+        <a href="#contact">Холбоо барих</a>
+      </div>
+      <div>
+        <h4>Холбоо барих</h4>
+        <p>+976 9911-2233</p>
+        <p>info@budtrade.mn</p>
+        <p>Сүхбаатар дүүрэг</p>
+        <p>Улаанбаатар хот</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 БудТрейд ХХК — Бүх эрх хуулиар хамгаалагдсан</p>
+      <p>Хийсэн: мэргэжлийн вэб дизайн</p>
+    </div>
+  </div>
+</footer>
+
+<button class="scroll-top-btn" id="scrollTop">
+  <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
+
+<script>
+// ── CURSOR ──────────────────────────────────────────
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cursor.style.left=mx+'px';cursor.style.top=my+'px';});
+(function animRing(){rx+=(mx-rx)*0.12;ry+=(my-ry)*0.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(animRing);})();
+document.querySelectorAll('a,button,.project-card,.service-card,.stat-card,.feature-item').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cursor.classList.add('hover');ring.classList.add('hover');});
+  el.addEventListener('mouseleave',()=>{cursor.classList.remove('hover');ring.classList.remove('hover');});
+});
+
+// ── NAVBAR ──────────────────────────────────────────
+const nav = document.getElementById('navbar');
+window.addEventListener('scroll',()=>{
+  nav.classList.toggle('scrolled',window.scrollY>60);
+  document.getElementById('scrollTop').classList.toggle('visible',window.scrollY>400);
+});
+document.getElementById('menuBtn').addEventListener('click',()=>{
+  document.getElementById('navLinks').classList.toggle('mobile-open');
+});
+document.getElementById('scrollTop').addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+
+// ── REVEAL ──────────────────────────────────────────
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach((e,i)=>{
+    if(e.isIntersecting){
+      setTimeout(()=>e.target.classList.add('active'),i*80);
+    }
+  });
+},{threshold:0.12});
+document.querySelectorAll('.reveal,.reveal-left').forEach(el=>observer.observe(el));
+
+// ── HERO THREE.JS: Floating Wireframe City ───────────
+(function(){
+  const canvas = document.getElementById('hero-canvas');
+  const renderer = new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60,canvas.clientWidth/canvas.clientHeight,0.1,1000);
+  camera.position.set(0,10,30);
+
+  function resize(){
+    renderer.setSize(canvas.clientWidth,canvas.clientHeight,false);
+    camera.aspect=canvas.clientWidth/canvas.clientHeight;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  window.addEventListener('resize',resize);
+
+  const gold = 0xc9a84c;
+  const goldDim = 0x3d2e0e;
+
+  // Grid floor
+  const gridGeo = new THREE.PlaneGeometry(100,100,20,20);
+  const gridMat = new THREE.MeshBasicMaterial({color:goldDim,wireframe:true,transparent:true,opacity:0.3});
+  const grid = new THREE.Mesh(gridGeo,gridMat);
+  grid.rotation.x = -Math.PI/2;
+  grid.position.y = -5;
+  scene.add(grid);
+
+  // Buildings
+  const buildings = [];
+  const configs = [
+    {x:-14,z:-5,w:4,d:4,h:18,glow:true},
+    {x:-8,z:2,w:3,d:3,h:12,glow:false},
+    {x:0,z:-8,w:5,d:5,h:28,glow:true},
+    {x:8,z:-2,w:3,d:4,h:16,glow:false},
+    {x:14,z:4,w:4,d:3,h:22,glow:true},
+    {x:-4,z:6,w:3,d:3,h:9,glow:false},
+    {x:5,z:8,w:4,d:3,h:14,glow:false},
+    {x:-18,z:0,w:3,d:3,h:10,glow:false},
+    {x:18,z:-4,w:3,d:3,h:8,glow:false},
+  ];
+
+  configs.forEach(c=>{
+    const geo = new THREE.BoxGeometry(c.w,c.h,c.d);
+    const mat = new THREE.MeshBasicMaterial({color:c.glow?gold:goldDim,wireframe:true,transparent:true,opacity:c.glow?0.7:0.25});
+    const mesh = new THREE.Mesh(geo,mat);
+    mesh.position.set(c.x,-5+c.h/2,c.z);
+    scene.add(mesh);
+    buildings.push({mesh,speed:0.002+Math.random()*0.002,offset:Math.random()*Math.PI*2});
+  });
+
+  // Floating particles
+  const pGeo = new THREE.BufferGeometry();
+  const count = 200;
+  const pos = new Float32Array(count*3);
+  for(let i=0;i<count*3;i++) pos[i]=(Math.random()-0.5)*80;
+  pGeo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const pMat = new THREE.PointsMaterial({color:gold,size:0.15,transparent:true,opacity:0.6});
+  scene.add(new THREE.Points(pGeo,pMat));
+
+  let mouseX=0,mouseY=0;
+  document.addEventListener('mousemove',e=>{
+    mouseX=(e.clientX/window.innerWidth-0.5)*0.5;
+    mouseY=(e.clientY/window.innerHeight-0.5)*0.3;
+  });
+
+  let t=0;
+  (function animate(){
+    requestAnimationFrame(animate);
+    t+=0.008;
+    camera.position.x += (mouseX*15 - camera.position.x)*0.04;
+    camera.position.y += (-mouseY*8+10 - camera.position.y)*0.04;
+    camera.lookAt(0,2,0);
+    buildings.forEach(b=>{
+      b.mesh.position.y += Math.sin(t+b.offset)*0.005;
+      b.mesh.rotation.y += b.speed*0.1;
+    });
+    grid.rotation.z = t*0.02;
+    renderer.render(scene,camera);
+  })();
+})();
+
+// ── STATS CANVAS: Rotating 3D Structure ─────────────
+(function(){
+  const canvas = document.getElementById('stats-canvas');
+  if(!canvas) return;
+  const renderer = new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50,1,0.1,100);
+  camera.position.set(0,0,12);
+
+  function resize(){
+    const w=canvas.clientWidth,h=canvas.clientHeight||400;
+    renderer.setSize(w,h,false);
+    camera.aspect=w/h;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  window.addEventListener('resize',resize);
+
+  const gold=0xc9a84c, goldL=0xe8c97a;
+
+  // Central torus knot
+  const tGeo = new THREE.TorusKnotGeometry(2.5,0.12,160,8,2,3);
+  const tMat = new THREE.MeshBasicMaterial({color:gold,wireframe:true,transparent:true,opacity:0.5});
+  const torus = new THREE.Mesh(tGeo,tMat);
+  scene.add(torus);
+
+  // Outer ring
+  const rGeo = new THREE.TorusGeometry(4,0.04,8,80);
+  const rMat = new THREE.MeshBasicMaterial({color:goldL,transparent:true,opacity:0.3});
+  const ring = new THREE.Mesh(rGeo,rMat);
+  ring.rotation.x = Math.PI/4;
+  scene.add(ring);
+
+  // Icosahedron frame
+  const iGeo = new THREE.IcosahedronGeometry(3.8,0);
+  const iMat = new THREE.MeshBasicMaterial({color:0x3d2e0e,wireframe:true,transparent:true,opacity:0.4});
+  scene.add(new THREE.Mesh(iGeo,iMat));
+
+  let t=0;
+  (function animate(){
+    requestAnimationFrame(animate);
+    t+=0.008;
+    torus.rotation.x=t*0.4;
+    torus.rotation.y=t*0.7;
+    ring.rotation.z=t*0.3;
+    renderer.render(scene,camera);
+  })();
+})();
+
+// ── BUILDING CANVAS: Architectural 3D ───────────────
+(function(){
+  const canvas = document.getElementById('building-canvas');
+  if(!canvas) return;
+  const renderer = new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45,1,0.1,200);
+  camera.position.set(8,12,20);
+  camera.lookAt(0,4,0);
+
+  function resize(){
+    const w=canvas.clientWidth,h=canvas.clientHeight||600;
+    renderer.setSize(w,h,false);
+    camera.aspect=w/h;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  window.addEventListener('resize',resize);
+
+  const gold=0xc9a84c,goldDim=0x2a1f06,white=0xf0ece4;
+
+  // Ground grid
+  const gGeo=new THREE.PlaneGeometry(40,40,15,15);
+  const gMat=new THREE.MeshBasicMaterial({color:goldDim,wireframe:true,transparent:true,opacity:0.4});
+  const ground=new THREE.Mesh(gGeo,gMat);
+  ground.rotation.x=-Math.PI/2;
+  scene.add(ground);
+
+  // Main tower
+  const tower=[
+    {w:6,h:16,d:6,y:8,c:gold,o:0.6},
+    {w:4,h:8,d:4,y:20,c:gold,o:0.7},
+    {w:2.5,h:5,d:2.5,y:26.5,c:0xe8c97a,o:0.8},
+  ];
+  tower.forEach(b=>{
+    const geo=new THREE.BoxGeometry(b.w,b.h,b.d);
+    const mat=new THREE.MeshBasicMaterial({color:b.c,wireframe:true,transparent:true,opacity:b.o});
+    const m=new THREE.Mesh(geo,mat);
+    m.position.y=b.y;
+    scene.add(m);
+  });
+
+  // Side buildings
+  [[-8,0,0,3,8,3],[8,0,0,3,10,3],[0,0,-8,4,6,4],[-5,0,5,2,5,2],[6,0,4,2,4,2]].forEach(([x,_,z,w,h,d])=>{
+    const geo=new THREE.BoxGeometry(w,h,d);
+    const mat=new THREE.MeshBasicMaterial({color:goldDim,wireframe:true,transparent:true,opacity:0.5});
+    const m=new THREE.Mesh(geo,mat);
+    m.position.set(x,h/2,z);
+    scene.add(m);
+  });
+
+  // Floating particles around building
+  const pGeo=new THREE.BufferGeometry();
+  const n=80,pa=new Float32Array(n*3);
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2,r=5+Math.random()*8;
+    pa[i*3]=Math.cos(a)*r;
+    pa[i*3+1]=Math.random()*30;
+    pa[i*3+2]=Math.sin(a)*r;
+  }
+  pGeo.setAttribute('position',new THREE.BufferAttribute(pa,3));
+  scene.add(new THREE.Points(pGeo,new THREE.PointsMaterial({color:gold,size:0.12,transparent:true,opacity:0.8})));
+
+  let t=0;
+  (function animate(){
+    requestAnimationFrame(animate);
+    t+=0.005;
+    scene.rotation.y=Math.sin(t*0.3)*0.15+t*0.1;
+    renderer.render(scene,camera);
+  })();
+})();
+
+// ── ABOUT CANVAS: 3D Blueprint Sphere ───────────────
+(function(){
+  const canvas = document.getElementById('about-canvas');
+  if(!canvas) return;
+  const renderer = new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50,1,0.1,100);
+  camera.position.set(0,0,14);
+
+  function resize(){
+    const w=canvas.clientWidth,h=canvas.clientHeight||600;
+    renderer.setSize(w,h,false);
+    camera.aspect=w/h;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  window.addEventListener('resize',resize);
+
+  const gold=0xc9a84c;
+
+  // Wireframe sphere
+  const sGeo=new THREE.SphereGeometry(4,24,16);
+  const sMat=new THREE.MeshBasicMaterial({color:0x1a0f00,wireframe:true,transparent:true,opacity:0.4});
+  const sphere=new THREE.Mesh(sGeo,sMat);
+  scene.add(sphere);
+
+  // Rings
+  [0,Math.PI/4,Math.PI/2,3*Math.PI/4].forEach((angle,i)=>{
+    const geo=new THREE.TorusGeometry(4,0.03+i*0.01,8,80);
+    const mat=new THREE.MeshBasicMaterial({color:gold,transparent:true,opacity:0.3+i*0.1});
+    const m=new THREE.Mesh(geo,mat);
+    m.rotation.x=angle;
+    m.rotation.y=angle*0.5;
+    scene.add(m);
+  });
+
+  // Nodes
+  for(let i=0;i<12;i++){
+    const phi=Math.acos(-1+2*i/12);
+    const theta=Math.sqrt(12*Math.PI)*phi;
+    const geo=new THREE.SphereGeometry(0.12,8,8);
+    const mat=new THREE.MeshBasicMaterial({color:gold});
+    const m=new THREE.Mesh(geo,mat);
+    m.position.setFromSphericalCoords(4,phi,theta);
+    scene.add(m);
+  }
+
+  let t=0;
+  (function animate(){
+    requestAnimationFrame(animate);
+    t+=0.006;
+    sphere.rotation.y=t*0.3;
+    sphere.rotation.x=t*0.1;
+    scene.children.forEach((c,i)=>{if(i>0&&i<5){c.rotation.z=t*(0.1+i*0.05);}});
+    renderer.render(scene,camera);
+  })();
+})();
+</script>
+</body>
+</html>
